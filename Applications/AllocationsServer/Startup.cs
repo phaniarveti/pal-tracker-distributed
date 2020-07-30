@@ -9,7 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Steeltoe.CloudFoundry.Connector.MySql.EFCore;
 using Steeltoe.Management.CloudFoundry;
+using Steeltoe.Discovery.Client;
 
+using Steeltoe.Common.Discovery;
 namespace AllocationsServer
 {
     public class Startup
@@ -33,13 +35,16 @@ namespace AllocationsServer
             
             services.AddSingleton<IProjectClient>(sp =>
             {
-                var httpClient = new HttpClient
+                 var handler = new DiscoveryHttpClientHandler(sp.GetService<IDiscoveryClient>());
+             var httpClient = new HttpClient(handler, false)
                 {
                     BaseAddress = new Uri(Configuration.GetValue<string>("REGISTRATION_SERVER_ENDPOINT"))
                 };
 
                 return new ProjectClient(httpClient);
             });
+
+            services.AddDiscoveryClient(Configuration);
             
         }
 
@@ -61,6 +66,8 @@ namespace AllocationsServer
             {
                 endpoints.MapControllers();
             });
+
+            app.UseDiscoveryClient();
         }
     }
 }
